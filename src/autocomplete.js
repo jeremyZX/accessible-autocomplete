@@ -513,9 +513,14 @@ export default class Autocomplete extends Component {
           selected: index
         })
       })
+      event.preventDefault(); // otherwise the page scrolls
       return
     }
+
+    const inputElement = this.elementReferences[-1]
     const focusIsOnOption = this.state.focused !== -1
+      && inputElement !== event.target // otherwise pressing space will auto-select an element even if focus is within inputElement
+
     if (focusIsOnOption) {
       event.preventDefault()
       this.handleOptionClick(event, this.state.focused)

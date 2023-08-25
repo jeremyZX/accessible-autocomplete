@@ -155,6 +155,13 @@ export default class Autocomplete extends Component {
   }
 
   clearSelection () {
+    const { selectElement } = this.props
+
+    selectElement.value = null
+    var event = document.createEvent('HTMLEvents')
+    event.initEvent('change', true, false)
+    selectElement.dispatchEvent(event)
+
     this.setState({
       focused: null,
       hovered: null,
@@ -162,11 +169,6 @@ export default class Autocomplete extends Component {
       options: this.props.defaultValue ? [this.props.defaultValue] : [],
       query: '',
       validChoiceMade: false
-    }, () => {
-      this.props.selectElement.value = null
-      var event = document.createEvent('HTMLEvents')
-      event.initEvent('change', true, false)
-      this.props.selectElement.dispatchEvent(event)
     })
   }
 
@@ -619,6 +621,7 @@ export default class Autocomplete extends Component {
     } = this.props
     const { focused, hovered, menuOpen, options, query, selected, ariaHint, validChoiceMade } = this.state
     const autoselect = this.hasAutoselect()
+    const hasValue = this.props.selectElement && (this.props.selectElement.value || '') !== ''
 
     const inputFocused = focused === -1
     const noOptionsAvailable = options.length === 0
@@ -633,6 +636,7 @@ export default class Autocomplete extends Component {
     const componentIsFocused = focused !== null
     const inputModifierFocused = componentIsFocused ? ` ${inputClassName}--focused` : ''
     const inputModifierType = this.props.showAllValues ? ` ${inputClassName}--show-all-values` : ` ${inputClassName}--default`
+    const inputModifierHasValue = hasValue ? ` ${inputClassName}--has-value` : ''
     const dropdownArrowClassName = `${cssNamespace}__dropdown-arrow-down`
     const optionFocused = focused !== -1 && focused !== null
 
@@ -696,7 +700,7 @@ export default class Autocomplete extends Component {
           aria-autocomplete={(this.hasAutoselect()) ? 'both' : 'list'}
           {...ariaDescribedProp}
           autoComplete='off'
-          className={`${inputClassName}${inputModifierFocused}${inputModifierType}`}
+          className={`${inputClassName}${inputModifierFocused}${inputModifierType}${inputModifierHasValue}`}
           id={id}
           onClick={(event) => this.handleInputClick(event)}
           onBlur={this.handleInputBlur}

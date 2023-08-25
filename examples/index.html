@@ -56,7 +56,7 @@
       <p><a href="form.html">Example in a real HTML form that you can submit</a></p>
 
       <h2>Options</h2>
-
+<!--
       <h3><code>{ element, id, source }</code></h3>
       <p>This illustrates usage with only the required arguments.</p>
       <label for="autocomplete-default">Country</label>
@@ -141,7 +141,45 @@
           <option value="gb" selected>United Kingdom</option>
         </select>
       </div>
+-->
+      <h1>Progressive enhancement with custom templates</h1>
+      <p>
+        This example demonstrates how to turn a server-rendered <code>&lt;select&gt;</code> element
+        into a autocomplete. Turn off JavaScript to see the <code>&lt;select&gt;</code> element.
+      </p>
+      <p>
+        It should have sensible defaults and keyboard interactions that mimic the browser native select.
+      </p>
+      <p>Uses <code>accessibleAutocomplete.enhanceSelectElement</code>.</p>
+      <label for="autocomplete-progressiveEnhancement-customtemplate">Country</label>
+      <div class="autocomplete-wrapper">
+        <select id="autocomplete-progressiveEnhancement-customtemplate">
+          <option value="">Please select a country</option>
+          <option value="al" data-name="Albania" data-endonym="Shqipëria" data-endonym-lang="sq">Albania</option>
+          <option value="at" data-name="Austria" data-endonym="Österreich" data-endonym-lang="de">Austria</option>
+          <option value="be" data-name="Belgium" data-endonym="België" data-endonym-lang="nl">Belgium</option>
+          <option value="ba" data-name="Bosnia and Herzegovina" data-endonym="Bosna i Hercegovina" data-endonym-lang="bs">Bosnia and Herzegovina</option>
+          <option value="bg" data-name="Bulgaria" data-endonym="България" data-endonym-lang="bg">Bulgaria</option>
+          <option value="hr" data-name="Croatia" data-endonym="Hrvatska" data-endonym-lang="hr">Croatia</option>
+          <option value="cy" data-name="Cyprus" data-endonym="Κύπρος" data-endonym-lang="el">Cyprus</option>
+          <option value="cz" data-name="Czech Republic" data-endonym="Česká republika" data-endonym-lang="cs">Czech Republic</option>
+          <option value="dk" data-name="Denmark" data-endonym="Danmark" data-endonym-lang="da">Denmark</option>
+          <option value="ee" data-name="Estonia" data-endonym="Eesti" data-endonym-lang="et">Estonia</option>
+          <option value="fr" data-name="France" data-endonym="République Française" data-endonym-lang="fr">France</option>
+          <option value="de" data-name="Germany" data-endonym="Deutschland" data-endonym-lang="de">Germany</option>
+          <option value="gb" data-name="United Kingdom" data-endonym="Great Britain" data-endonym-lang="en">United Kingdom</option>
+        </select>
+        <template id="autocomplete-progressiveEnhancement-customtemplate-template">
+          <div>
+            <p>${text}</p>
+          </div>
+          <small>
+            ${endonym} (${endonymLang})
+          </small>
+        </template>
+      </div>
 
+<!--
       <h3>Programmatic API for enhanced select (Work in progress)</h3>
       <p>
         This example demonstrates how you can use the programmatic API to perform actions from code.
@@ -183,6 +221,7 @@
         tStatusResults: () => '' }</code> options.</p>
       <label for="autocomplete-i18n">Country</label>
       <div id="tt-i18n" class="autocomplete-wrapper"></div>
+-->
     </main>
 
     <script type="text/javascript" src="../dist/accessible-autocomplete.min.js"></script>
@@ -446,7 +485,7 @@
         'Zimbabwe'
       ]
     </script>
-
+<!--
     <script type="text/javascript">
       var element = document.querySelector('#tt-default')
       var id = 'autocomplete-default'
@@ -522,7 +561,142 @@
         clearableSelect.accessibleAutocomplete.clearSelection();
       })
     </script>
+-->
+    <script type="text/javascript">
+      (function() {
+        const selectElement = document.getElementById('autocomplete-progressiveEnhancement-customtemplate')
 
+        /**
+         * @param {HTMLElement} selectElement - the element to enhance
+         * 
+         */
+        function customEnhanceSelectElement(selectElement) {
+          const templateElement = document.getElementById(`${selectElement.getAttribute('id')}-template`);
+
+          if (!templateElement) {
+            throw `No template named ${selectElement.getAttribute('id')}-template was found in the DOM`;
+          }
+
+          const templateHtml = templateElement.innerHTML;
+
+          function tokenizeElement(element) {
+            const dataKeys = Object.keys(element.dataset);
+            const tokenParts = dataKeys.map(key => element.dataset[key]);
+            return tokenParts.join(' ');
+          }
+
+          const data = Array.from(selectElement.querySelectorAll("option")).map(element => ({
+              text: element.innerText,
+              value: element.value,
+              target: element.value && tokenizeElement(element).toUpperCase() || null,
+              ...element.dataset,
+            }
+          ));
+
+          const searchableData = data.filter(d => d.value);
+
+          const dataMap = new Map(data.map(element => [
+            element.text,
+            element
+          ]));
+
+          /**
+           * Uses regex to take a plain old string with ${...} parts
+           * and render the substitutions. Note that this does not eval
+           * any code within the template.
+           * 
+           * @param {string} str - The templated string to interpolate
+           * @param {any} params - The parameters containing substitutions
+           * @returns {string}
+           */
+          function interpolate (str, params) {
+            let parts = str.split(/\$\{(?!\d)[^\}]*\}/);
+            let args = str.match(/[^{\}]+(?=})/g) || [];
+
+            let parameters = args.map(argument => params[argument] || (params[argument] === undefined ? "" : params[argument]));
+            return String.raw({ raw: parts }, ...parameters);
+          }
+
+          /**
+           * An array of values to search when the user types in the input field,
+           * or a function to take what the user types and call a callback
+           * function with the results to be displayed.
+           * 
+           * @param {string} query
+           * @param {(resultsToSync: string[]) => void} syncResults
+           */
+          function source (query, syncResults) {
+            let results = searchableData;
+
+            if (query) {
+              const term = (query  || '').toUpperCase().trim();
+              const tokenizedSearch = term.split(' ').map(token => token.toUpperCase());
+
+              if (tokenizedSearch.length > 0) {
+                results = searchableData.filter(search => search.target.indexOf(term) == 0
+                  || tokenizedSearch.every(token => search.target.indexOf(token) >= 0));
+              }
+            }
+
+            syncResults(results.map(r => r.text));
+          }
+
+          /**
+           * Receives one argument, the currently selected suggestion, and returns
+           * the string value to be inserted into the input.
+           * 
+           * @param {string} text
+           * @returns {string | null}
+           */
+          function inputValue (text) {
+            const item = dataMap.get(text);
+
+            if (item) {
+              return item.text;
+            }
+
+            return null;
+          }
+
+          /**
+           * Receives one argument, a suggestion to be displayed. It is used when
+           * rendering suggestions, and should return a string, which can contain
+           * HTML.
+           * 
+           * @param {string} text
+           * @returns {string}
+           */
+          function suggestion (text) {
+            let result = text;
+            if (text) {
+              const item = dataMap.get(text);
+              if (item && item.value) {
+                result = interpolate(templateHtml, item);
+              }
+            }
+
+            return result;
+          }
+
+          function onConfirm (value) {
+            console.log(value);
+          }
+
+          accessibleAutocomplete.enhanceSelectElement({
+            selectElement,
+            source,
+            templates: {
+              inputValue,
+              suggestion
+            },
+            onConfirm
+          });
+        }
+
+        customEnhanceSelectElement(selectElement);
+      })()
+    </script>
+<!--
     <script type="text/javascript">
       function customSuggest (query, syncResults) {
         var results = [
@@ -650,6 +824,6 @@
         }
       })
     </script>
-
+-->
   </body>
 </html>

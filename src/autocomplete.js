@@ -186,8 +186,8 @@ export default class Autocomplete extends Component {
     return suggestionTemplate ? suggestionTemplate(value) : value
   }
 
-  handleComponentBlur (newState, escape) {
-    const { options, query, selected } = this.state
+  handleComponentBlur (newState, escape, event) {
+    const { options, query, selected, menuOpen } = this.state
     let newQuery
     if (this.props.confirmOnBlur) {
       newQuery = newState.query || query
@@ -210,6 +210,10 @@ export default class Autocomplete extends Component {
       // is selected
       if (escape) {
         this.forceUpdate()
+        // prevent esc from bubbling back up and closing things like modal windows
+        if (event && menuOpen) {
+          event.stopPropagation();
+        }
       }
     })
   }
@@ -241,7 +245,7 @@ export default class Autocomplete extends Component {
     const { focused, menuOpen, options, query, selected } = this.state
     const focusingAnOption = focused !== -1
 
-    if (!focusingAnOption || !event.relatedTarget.matches('li.autocomplete__option')) {
+    if (!focusingAnOption || !event.relatedTarget || !event.relatedTarget.matches('li.autocomplete__option')) {
       const keepMenuOpen = menuOpen && isIosDevice()
       const newQuery = isIosDevice() ? query : this.templateInputValue(options[selected])
 
@@ -271,7 +275,7 @@ export default class Autocomplete extends Component {
       case 'escape':
         this.handleComponentBlur({
           query: this.state.query
-        }, true)
+        }, true, event);
 
         break
       default:
@@ -325,7 +329,7 @@ export default class Autocomplete extends Component {
     } else if (this.props.selectElement) {
       this.handleComponentBlur({
         menuOpen: false
-      }, true)
+      }, true, event)
     } else {
       this.handleInputChange(event)
     }
@@ -583,7 +587,7 @@ export default class Autocomplete extends Component {
       case 'escape':
         this.handleComponentBlur({
           query: this.state.query
-        }, true)
+        }, true, event)
 
         break
       default:

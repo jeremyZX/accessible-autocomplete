@@ -549,6 +549,19 @@ describe('Autocomplete', () => {
           expect(onConfirmTriggered).to.equal(true)
         })
       })
+      describe('in input element', () => {
+        it('does not prevent, keeps menu open, keeps query, does not trigger onConfirm', () => {
+          let preventedDefault = false
+          onConfirmAutocomplete.elementReferences[-1] = 'input element';
+          onConfirmAutocomplete.setState({ menuOpen: true, options: ['France'], focused: 0, selected: 0 })
+          onConfirmAutocomplete.handleKeyDown(eventStub({ preventDefault: () => { preventedDefault = true }, keyCode: 32, target: 'input element' }))
+          expect(onConfirmAutocomplete.state.menuOpen).to.equal(true)
+          expect(onConfirmAutocomplete.state.focused).to.equal(0)
+          expect(onConfirmAutocomplete.state.selected).to.equal(0)
+          expect(preventedDefault).to.equal(false)
+          expect(onConfirmTriggered).to.equal(false)
+        })
+      })
     })
 
     describe('an unrecognised key', () => {

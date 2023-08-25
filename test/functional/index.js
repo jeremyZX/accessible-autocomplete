@@ -540,7 +540,7 @@ describe('Autocomplete', () => {
         it('prevents default, closes the menu, sets the query, focuses the input, triggers onConfirm', () => {
           let preventedDefault = false
           onConfirmAutocomplete.setState({ menuOpen: true, options: ['France'], focused: 0, selected: 0 })
-          onConfirmAutocomplete.handleKeyDown(eventStub({ preventDefault: () => { preventedDefault = true }, keyCode: 32 }))
+          onConfirmAutocomplete.handleKeyDown(eventStub({ preventDefault: () => { preventedDefault = true }, keyCode: 32, target: 'not the input element' }))
           expect(onConfirmAutocomplete.state.menuOpen).to.equal(false)
           expect(onConfirmAutocomplete.state.query).to.equal('France')
           expect(onConfirmAutocomplete.state.focused).to.equal(-1)

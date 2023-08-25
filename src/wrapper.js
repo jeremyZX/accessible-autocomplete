@@ -30,8 +30,8 @@ accessibleAutocomplete.enhanceSelectElement = (configurationOptions) => {
     let availableOptions = [].filter.call(configurationOptions.selectElement.options, option => (option.value || configurationOptions.preserveNullOptions))
     configurationOptions.source = availableOptions.map(option => option.textContent || option.innerText)
   }
-  let onConfirm = configurationOptions.onConfirm || (() => {});
-  configurationOptions.onConfirm = (query => {
+  let onConfirm = configurationOptions.onConfirm || (() => {})
+  configurationOptions.onConfirm = function (query) {
     const requestedOption = [].filter.call(configurationOptions.selectElement.options, option => (option.textContent || option.innerText) === query)[0]
     if (requestedOption) { requestedOption.selected = true }
 
@@ -40,8 +40,8 @@ accessibleAutocomplete.enhanceSelectElement = (configurationOptions) => {
     event.initEvent('change', true, false)
     configurationOptions.selectElement.dispatchEvent(event)
 
-    onConfirm.apply(this, arguments);
-  })
+    onConfirm.apply(this, arguments)
+  }
 
   if (configurationOptions.selectElement.value || configurationOptions.defaultValue === undefined) {
     const option = configurationOptions.selectElement.options[configurationOptions.selectElement.options.selectedIndex]
